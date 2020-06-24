@@ -1911,3 +1911,9 @@ Watching for file changes with StatReloader
 "GET /static/ckeditor/ckeditor/plugins/magicline/images/icon.png?t=JB9C HTTP/1.1" 304 0
 "GET /home/home/ HTTP/1.1" 200 3854
 "GET /static/poper/poper.js HTTP/1.1" 404 1668
+Not Found: /article/article_list/9999
+"GET /article/article_list/9999 HTTP/1.1" 404 4039
+"GET /article/article_list/ HTTP/1.1" 200 16852
+"GET /static/poper/poper.js HTTP/1.1" 404 1668
+"GET /article/article_detail/51/ HTTP/1.1" 200 15100
+"GET /static/poper/poper.js HTTP/1.1" 404 1668
