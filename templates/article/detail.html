@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+Full Content of Article
+{% endblock title %}
+
+{% block content %}
+
+<div class="container" >
+    <div class="row">
+        <div class="col-9">
+            <h1 class="mt-4 mb-4">{{ article.title }}</h1>
+            <div class="alert alert-success">
+                <div>      <!--only author can see delete and update -->
+                    author:  {{ article.author }}
+                    {% if user == article.author %}
+                         -<a href="#" onclick="confirm_safe_delete()">Delete</a>
+                         -<a href="{% url "article:article_update" article.id %}">Edit Article</a>
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="color:rgb(164,218,239)">
+                         Readers:{{ article.total_views }}&nbsp;&nbsp;&nbsp;
+                    </div>
+                    <span style="color:rgb(249,187,192);">
+                        {{ article.created|date:'Y-m-d' }} Post&nbsp;&nbsp;&nbsp;<br>
+                    </span>
+                    <span style="color:rgb(135,69,69);">
+                        {{ article.updated|date:'Y-m-d' }} Update
+                    </span>
+                </div>
+                <form
+                    style="display:none;"
+                    id="safe_delete"
+                    action="{% url 'article:article_safe_delete' article.id %}"
+                    method="POST"
+                    >
+                    {% csrf_token %}
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+
+            <div>
+                {{ article.body|safe }}
+            </div>
+
+            <hr>
+            {% if user.is_authenticated %}       <!-- only registered user can comment the article-->
+                <div>
+                    <form action="{% url 'comment:post_comment' article.id %}" method="POST">
+                        {% csrf_token %}
+                            <div class="form-group">
+                                <label for="body">
+                                    <strong>
+                                        Comment:
+                                    </strong>
+                                </label>
+                                <div>
+                                    {{ comment_form.media }}
+                                    {{ comment_form.body }}
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success">Post</button>
+                    </form>
+                </div>
+                <br>
+            {% else %}
+                <br>
+                <h5 class="row justify-content-center">
+                    Please<a href="{% url 'userprofile:login' %}">&nbsp;Login </a>&nbsp;First!
+                </h5>
+                <br>
+            {% endif %}
+
+            {% load mptt_tags %}
+            <h4>{{ comments.count }} comments</h4>
+            <div class="row">
+                <!--traverse the tree structure-->
+                {% recursetree comments %}
+
+                    {% with comment=node %}
+                        <div class="{% if comment.reply_to %}
+                                    offset-1 col-11
+                                    {% else %}
+                                    col-12
+                                    {% endif %}">
+
+                            <hr>
+                            <p>
+                                <strong style="color:pink">
+                                    {{ comment.user }}
+                                </strong>
+
+                                {% if comment.reply_to %}
+                                    <i class="far fa-arrow-alt-circle-right"
+                                       style="color: cornflowerblue;"></i>
+                                    <strong style="color:pink">
+                                        {{ comment.reply_to }}
+                                    </strong>
+                                {% endif %}
+                            </p>
+
+                            <div>{{ comment.body|safe }}</div>
+
+                            <div>
+                                <span style="color:rgb(135,69,69)">
+                                    {{ comment.created|date:"Y-m-d H:i" }}
+                                </span>
+
+                                <!--load modal button-->
+                                {% if user.is_authenticated %}
+                                <button type="button"
+                                        class="btn btn-light btn-sm text-muted"
+                                        onclick="load_modal({{ article.id }}, {{ comment.id }})">
+                                    Reply
+                                </button>
+                                {% else %}
+                                <a class="btn btn-light btn-sm text-muted"
+                                   href="{% url 'userprofile:login' %}">
+                                    Reply
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            <!--Modal-->
+                            <div class="modal fade"
+                                 id = "comment_{{ comment.id }}"
+                                 tabindex="-1"
+                                 role="dialog"
+                                 aria-labelledby="CommentModalCenter"
+                                 aria-hidden="true">
+
+                                <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                                    <div class="modal-content" style="height:250px">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalCenterTitle">Reply {{ comment.user }}:</h5>
+                                        </div>
+                                        <div class="modal-boby" id="modal_body_{{ comment.id }}"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if not comment.is_leaf_node %}
+                                <div class="children">
+                                    {{ children }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                    {% endwith %}
+                {% endrecursetree %}
+            </div>
+
+        </div>
+
+        <div class="col-3 mt-4" id="sidebar" class="sidebar">
+            <div class="sidebar__inner">
+                <h4><strong>Content</strong></h4>
+                <hr>
+                <div>
+                    {{ toc|safe }}
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .sidebar{
+            will-change: min-height;
+            }
+
+            .sidebar__inner{
+            transform: translate(0, 0);
+            transform: translate3d(0, 0, 0);
+            will-change: position, transform;
+            }
+
+        </style>
+    </div>
+
+</div>
+
+{% endblock content %}
+
+{% block script %}
+
+<script>
+    function confirm_safe_delete(){
+        layer.open({
+            title:"Confirm Delete",
+            btn:['Confirm'],
+            content:"Do you confirm that you want to delete the article?",
+            yes: function(index,layero){
+                $('form#safe_delete button').click();
+                layer.close(index);
+            }
+        })
+    }
+</script>
+
+<script src="{% static 'sticky_sidebar/jquery.sticky-sidebar.min.js' %}"></script>
+<script type="text/javascript">
+    $('#sidebar').stickySidebar({
+        topSpacing: 20,
+        bottomSpacing: 20,
+    });
+</script>
+
+<script>
+    // load modal
+    function load_modal(article_id, comment_id) {
+        let modal_body = '#modal_body_' + comment_id;
+        let modal_id = '#comment_' + comment_id;
+
+        // load editor
+        if ($(modal_body).children().length === 0) {
+            let content = '<iframe src="/comment/post_comment/' +
+                article_id +
+                '/' +
+                comment_id +
+                '"' +
+                ' frameborder="0" style="width: 100%; height: 100%;" id="iframe_' +
+                comment_id +
+                '"></iframe>';
+            $(modal_body).append(content);
+        };
+
+        $(modal_id).modal('show');
+    }
+</script>
+
+{% endblock script %}
+

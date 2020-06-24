@@ -1,0 +1,12 @@
+#!E:\python\pycharm_file\venv\Scripts\python.exe
+# EASY-INSTALL-ENTRY-SCRIPT: 'pymysql2==1.3.3','console_scripts','xmysql'
+__requires__ = 'pymysql2==1.3.3'
+import re
+import sys
+from pkg_resources import load_entry_point
+
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
+    sys.exit(
+        load_entry_point('pymysql2==1.3.3', 'console_scripts', 'xmysql')()
+    )
